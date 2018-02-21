@@ -10,17 +10,18 @@ public class EchoServer {
             Socket incoming = serverSocket.accept();
 
             BufferedReader in = new BufferedReader(new InputStreamReader(incoming.getInputStream()));
+
             PrintWriter out = new PrintWriter(incoming.getOutputStream(), true);
-            out.println("Hello! Enter BYE to exit.");
+            //out.println("Hello! Enter BYE to exit.");
 
             boolean done = false;
             while (!done){
-             String line = in.readLine();
-             if(line == null)
+             String msgFromClient = in.readLine();
+             if(msgFromClient == null)
                  done = true;
              else{
-                 out.println("Echo: " + line);
-                 if(line.trim().equals("BYE"))
+                 out.println("Server: " + msgFromClient);
+                 if(msgFromClient.trim().equals("exit"))
                      done = true;
              }
             }
