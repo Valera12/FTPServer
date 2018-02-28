@@ -10,11 +10,11 @@ public class EchoServer {
     private BufferedReader reader;
     private BufferedWriter writer;
     private PrintWriter out;
-
+/*
     EchoServer(){
 
     }
-
+*/
 
     private void init() throws IOException {
         serverSocket = new ServerSocket(8189);
@@ -22,6 +22,26 @@ public class EchoServer {
         reader = new BufferedReader(new InputStreamReader(incoming.getInputStream()));
         writer = new BufferedWriter(new OutputStreamWriter(incoming.getOutputStream()));
         out = new PrintWriter(incoming.getOutputStream(), true);
+    }
+
+    void dispatchMessage(String message){
+        System.out.println(message);
+        if (message.trim().equals("QUIT")){
+           sendMessage("221 GOODBYE");
+            try {
+                incoming.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            System.exit(0);
+        }
+
+        if(message.startsWith("USER")) {
+            sendMessage("331 user correct");
+        }
+        if(message.startsWith("PASS")) {
+            sendMessage("230 authorized");
+        }
     }
 
     private void sendMessage(String message) {
@@ -38,7 +58,7 @@ public class EchoServer {
     public static void main(String[] args) {
         EchoServer server = new EchoServer();
         Window window = new Window();
-        window.startWindow();
+        //window.startWindow();
 
         try {
             server.init();
@@ -47,20 +67,7 @@ public class EchoServer {
             boolean done = true;
             while (done) {
                 String msgFromClient = server.reader.readLine();
-
-                System.out.println(msgFromClient);
-
-
-                if (msgFromClient.trim().equals("QUIT"))
-                    done = false;
-
-                if(msgFromClient.startsWith("USER")) {
-                    server.sendMessage("331 user correct");
-                }
-                if(msgFromClient.startsWith("PASS")) {
-                    server.sendMessage("230 authorized");
-                }
-
+                server.dispatchMessage(msgFromClient);
             }
             server.incoming.close();
         } catch (Exception e) {
