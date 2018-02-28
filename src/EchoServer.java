@@ -11,6 +11,11 @@ public class EchoServer {
     private BufferedWriter writer;
     private PrintWriter out;
 
+    EchoServer(){
+
+    }
+
+
     private void init() throws IOException {
         serverSocket = new ServerSocket(8189);
         incoming =  serverSocket.accept();
@@ -29,8 +34,11 @@ public class EchoServer {
         sendMessage("220 HELLO");
     }
 
+
     public static void main(String[] args) {
         EchoServer server = new EchoServer();
+        Window window = new Window();
+        window.startWindow();
 
         try {
             server.init();
@@ -41,6 +49,7 @@ public class EchoServer {
                 String msgFromClient = server.reader.readLine();
 
                 System.out.println(msgFromClient);
+
 
                 if (msgFromClient.trim().equals("QUIT"))
                     done = false;
