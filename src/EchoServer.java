@@ -6,18 +6,18 @@ public class EchoServer {
 
     private final String CRLF = "\r\n";
     private ServerSocket serverSocket;
+    public ServerSocket dataSocket;
     private Socket incoming;
     private BufferedReader reader;
     private BufferedWriter writer;
     private PrintWriter out;
 /*
     EchoServer(){
-
     }
 */
 
     private void init() throws IOException {
-        serverSocket = new ServerSocket(8189);
+        serverSocket = new ServerSocket(21);
         incoming =  serverSocket.accept();
         reader = new BufferedReader(new InputStreamReader(incoming.getInputStream()));
         writer = new BufferedWriter(new OutputStreamWriter(incoming.getOutputStream()));
@@ -27,7 +27,7 @@ public class EchoServer {
     void dispatchMessage(String message){
         System.out.println(message);
         if (message.trim().equals("QUIT")){
-           sendMessage("221 GOODBYE");
+            sendMessage("221 GOODBYE");
             try {
                 incoming.close();
             } catch (IOException e) {
@@ -42,6 +42,15 @@ public class EchoServer {
         if(message.startsWith("PASS")) {
             sendMessage("230 authorized");
         }
+
+        if(message.startsWith("PASV")){
+            try {
+                dataSocket = new ServerSocket(228,10, Inet4Address.getLocalHost() );
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            sendMessage(dataSocket.toString());
+        }
     }
 
     private void sendMessage(String message) {
@@ -54,7 +63,6 @@ public class EchoServer {
         sendMessage("220 HELLO");
     }
 
-
     public static void main(String[] args) {
         EchoServer server = new EchoServer();
         Window window = new Window();
@@ -63,6 +71,7 @@ public class EchoServer {
         try {
             server.init();
             server.sendWelcomeMessage();
+
 
             boolean done = true;
             while (done) {
