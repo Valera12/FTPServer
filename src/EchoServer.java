@@ -1,4 +1,3 @@
-import javax.swing.*;
 import java.net.*;
 import java.io.*;
 
@@ -6,27 +5,50 @@ public class EchoServer {
 
     private final String CRLF = "\r\n";
     private ServerSocket serverSocket;
-    public ServerSocket dataSocket;
+    private ServerSocket dataSocket;
     private Socket incoming;
     private BufferedReader reader;
     private BufferedWriter writer;
     private PrintWriter out;
-/*
-    EchoServer(){
-    }
-*/
+    int rowCount;
+    UsersDB usersDB;
+    String lastUsername;
+    Window window;
 
-    private void init() throws IOException {
-        serverSocket = new ServerSocket(21);
-        incoming =  serverSocket.accept();
+
+    public EchoServer(UsersDB usersDB, Window window) {
+        this.usersDB = usersDB;
+        this.window = window;
+    }
+
+    public void processRequests() {
+        try {
+            boolean done = true;
+            while (done) {
+                String msgFromClient = reader.readLine();
+                dispatchMessage(msgFromClient);
+                window.msgToTextArea(msgFromClient);
+
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+
+    public void init() throws IOException {
+        serverSocket = new ServerSocket(8189);
+        incoming = serverSocket.accept();
         reader = new BufferedReader(new InputStreamReader(incoming.getInputStream()));
         writer = new BufferedWriter(new OutputStreamWriter(incoming.getOutputStream()));
         out = new PrintWriter(incoming.getOutputStream(), true);
     }
 
-    void dispatchMessage(String message){
+    void dispatchMessage(String message) {
         System.out.println(message);
-        if (message.trim().equals("QUIT")){
+        window.msgToTextArea(message);
+        if (message.trim().equals("QUIT")) {
             sendMessage("221 GOODBYE");
             try {
                 incoming.close();
@@ -35,17 +57,45 @@ public class EchoServer {
             }
             System.exit(0);
         }
+        rowCount = usersDB.getRowCount();
+        if (message.startsWith("USER")) {
+            boolean found = false;
+            lastUsername = message.substring(5);
+            for(int i = 0; i < rowCount; i++) {
+                if (usersDB.getValueAt(i, 0).equals(lastUsername)) {
+                    found = true;
+                    break;
+                }
+            }
 
-        if(message.startsWith("USER")) {
-            sendMessage("331 user correct");
-        }
-        if(message.startsWith("PASS")) {
-            sendMessage("230 authorized");
+            if (found) {
+                sendMessage("331 user correct");
+            } else {
+                sendMessage("530 not logged in");
+            }
+
         }
 
-        if(message.startsWith("PASV")){
+        if (message.startsWith("PASS")) {
+            boolean found = false;
+            for(int i = 0; i < rowCount; i++) {
+                if (usersDB.getValueAt(i, 1).equals(message.substring(5)) &&
+                        usersDB.getValueAt(i, 0).equals(lastUsername)) {
+                    found = true;
+                    break;
+                }
+            }
+            if (found) {
+                sendMessage("230 authorized");
+            } else {
+                sendMessage("332 Incorrect password");
+            }
+
+        }
+
+        if (message.startsWith("PASV")) {
             try {
-                dataSocket = new ServerSocket(228,10, Inet4Address.getLocalHost() );
+                dataSocket = new ServerSocket(228, 10, Inet4Address.getLocalHost());
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -63,24 +113,5 @@ public class EchoServer {
         sendMessage("220 HELLO");
     }
 
-    public static void main(String[] args) {
-        EchoServer server = new EchoServer();
-        Window window = new Window();
-        //window.startWindow();
 
-        try {
-            server.init();
-            server.sendWelcomeMessage();
-
-
-            boolean done = true;
-            while (done) {
-                String msgFromClient = server.reader.readLine();
-                server.dispatchMessage(msgFromClient);
-            }
-            server.incoming.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
 }
