@@ -23,12 +23,12 @@ public class Window  {
         userTable.setSize(50,50);
         window.getContentPane().add(scrollPane);
         window.add(textArea);
-       //System.out.println(userTable.getValueAt(0, 1));
 
     }
 
     void msgToTextArea( String message){
         textArea.append(message + "\n");
+
     }
 
     public static void main(String[] args) {
