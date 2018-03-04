@@ -82,7 +82,7 @@ public class EchoServer {
             }
 
             if (found) {
-                sendMessage("331 user correct");
+                sendMessage("331 Password required for " + lastUsername);
             } else {
                 sendMessage("530 not logged in");
             }
@@ -99,7 +99,7 @@ public class EchoServer {
                 }
             }
             if (found) {
-                sendMessage("230 authorized");
+                sendMessage("230 Logged on");
             } else {
                 sendMessage("332 Incorrect password");
             }
@@ -129,7 +129,7 @@ public class EchoServer {
             System.out.println(i);
             j = Integer.parseInt(builder.toString().substring(8),2);
             System.out.println(j);
-            sendMessage("229 Entering Passive Mode (192,168,0,103,"+i+","+j+")");
+            sendMessage("227 Entering Passive Mode (192,168,0,103,"+i+","+j+")");
 
         }
 
@@ -139,7 +139,7 @@ public class EchoServer {
                 if(message.length() > 5) {
                     dir = message.substring(5);
                     String fileInfo = List(dir);
-                    sendMessage("150 start transmission");
+                    sendMessage("150 Opening data chanel for directory listing of \"" + dir + "\"");
 
                     dataSocket = dataServerSocket.accept();
 
@@ -150,18 +150,18 @@ public class EchoServer {
                     out2.close();*/
                     out.write(fileInfo + CRLF);
                     out.close();
-                    sendMessage("150 successfully transmitted");
+                    sendMessage("226 Successfully transferred \"" + dir + "\"");
                 }else {
                     dir = "D:\\";
                     String fileInfo = List(dir);
-                    sendMessage("150 start transmission");
+                    sendMessage("150 Opening data chanel for directory listing of \"" + dir + "\"");
 
                     dataSocket = dataServerSocket.accept();
                     out = new PrintWriter(dataSocket.getOutputStream(), true);
                     //out.print(fileInfo + CRLF);
                     out.write(fileInfo + CRLF);
                     out.close();
-                    sendMessage("150 successfully transmitted");
+                    sendMessage("226 Successfully transferred \"" + dir + "\"");
                 }
             } catch (IOException e) {
                 e.printStackTrace();
