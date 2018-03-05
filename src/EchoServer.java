@@ -12,8 +12,10 @@ public class EchoServer {
     private BufferedReader reader;
     private BufferedWriter writer;
     private PrintWriter out;
+    private FileOutputStream fileOutputStream;
     private int rowCount;
     private String dir;
+    private String cwd;
     private UsersDB usersDB;
     private String lastUsername;
     private Window window;
@@ -22,6 +24,7 @@ public class EchoServer {
     public EchoServer(UsersDB usersDB, Window window) {
         this.usersDB = usersDB;
         this.window = window;
+        this.cwd = "D:\\";
     }
 
     public void init() throws IOException {
@@ -60,13 +63,14 @@ public class EchoServer {
 
     void dispatchMessage(String message) {
         System.out.println(message);
-        //window.msgToTextArea(message);
 
         commandQuit(message);
         commandPasv(message);
         commandPass(message);
         commandList(message);
         commandChangeWorkDirectory(message);
+        commandType(message);
+        printPrevWorkingDirectory(message);
     }
 
     private String listOfFiles(String dir) {
@@ -82,7 +86,7 @@ public class EchoServer {
             }
         }
 
-        return builder.toString();
+        return builder.toString().substring(0, builder.toString().length() > 0 ? builder.toString().length() - 1 : 0);
     }
 
 
@@ -96,7 +100,6 @@ public class EchoServer {
             int i;
             int j;
             String s = Integer.toBinaryString(dataServerSocket.getLocalPort());
-            //System.out.println(s);
             StringBuilder builder = new StringBuilder();
             for (int index = 0; index < 16 - s.length(); ++index) {
                 builder.append("0");
@@ -107,8 +110,8 @@ public class EchoServer {
             System.out.println(i);
             j = Integer.parseInt(builder.toString().substring(8), 2);
             System.out.println(j);
-            sendMessage("227 Entering Passive Mode (192,168,0,103," + i + "," + j + ")");
-            window.msgToTextArea("227 Entering Passive Mode (192,168,0,103," + i + "," + j + ")");
+            sendMessage("227 Entering Passive Mode (192,168,0,105," + i + "," + j + ")");
+            window.msgToTextArea("227 Entering Passive Mode (192,168,0,105," + i + "," + j + ")");
         }
     }
 
@@ -172,35 +175,26 @@ public class EchoServer {
     void commandList(String message) {
         if (message.startsWith("LIST")) {
             try {
-
                 if (message.length() > 5) {
                     dir = message.substring(5);
-                    String fileInfo = listOfFiles(dir);
-                    sendMessage("150 Opening data chanel for directory listing of \"" + dir + "\"");
-                    window.msgToTextArea("150 Opening data chanel for directory listing of \"" + dir + "\"");
-                    dataSocket = dataServerSocket.accept();
-                    out = new PrintWriter(dataSocket.getOutputStream(), true);
-                    /*BufferedOutputStream out2 = new BufferedOutputStream(dataSocket.getOutputStream());
-                    out2.write(fileInfo.getBytes());
-                    out2.flush();
-                    out2.close();*/
-                    out.write(fileInfo + CRLF);
-                    out.close();
-                    sendMessage("226 Successfully transferred \"" + dir + "\"");
-                    window.msgToTextArea("226 Successfully transferred \"" + dir + "\"");
                 } else {
-                    dir = "D:\\";
-                    String fileInfo = listOfFiles(dir);
-                    sendMessage("150 Opening data chanel for directory listing of \"" + dir + "\"");
-                    window.msgToTextArea("150 Opening data chanel for directory listing of \"" + dir + "\"");
-                    dataSocket = dataServerSocket.accept();
-                    out = new PrintWriter(dataSocket.getOutputStream(), true);
-                    //out.print(fileInfo + CRLF);
-                    out.write(fileInfo + CRLF);
-                    out.close();
-                    sendMessage("226 Successfully transferred \"" + dir + "\"");
-                    window.msgToTextArea("226 Successfully transferred \"" + dir + "\"");
+                    dir = cwd;
                 }
+                String fileInfo = listOfFiles(dir);
+
+                sendMessage("150 Opening data chanel for directory listing of \"" + dir + "\"");
+                window.msgToTextArea("150 Opening data chanel for directory listing of \"" + dir + "\"");
+
+                dataSocket = dataServerSocket.accept();
+
+                out = new PrintWriter(dataSocket.getOutputStream(), true);
+                out.write(fileInfo + CRLF);
+                out.close();
+                dataSocket.close();
+                dataServerSocket.close();
+
+                sendMessage("226 Successfully transferred \"" + dir + "\"");
+                window.msgToTextArea("226 Successfully transferred \"" + dir + "\"");
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -211,24 +205,47 @@ public class EchoServer {
         if (message.startsWith("CWD")) {
             try {
                 dir = message.substring(4);
-                sendMessage("ZXC Directory changed to " + dir);
-
+                sendMessage("250 Directory changed to " + dir);
+                cwd = cwd + '/' + dir;
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
     }
-    //TODO: доделать команду отправки файли клиенту.
-    void commandStor(String message) {
-        if (message.startsWith("STOR")) {
+
+    //TODO: доделать команду получения файла.
+    void commandRetr(String message, String filename) {
+        String filenameToStor;
+        filenameToStor = message.substring(5);
+        File file = new File(filenameToStor);
+        if (message.startsWith("RETR")) {
             try {
                 dataServerSocket = new ServerSocket();
+                BufferedInputStream inputFile = new BufferedInputStream(new FileInputStream(filenameToStor));
+                BufferedOutputStream outputFile = new BufferedOutputStream(dataSocket.getOutputStream());
+                inputFile.read();
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            String filenameToStor;
-            filenameToStor = message.substring(5);
-            listOfFiles(filenameToStor);
+        }
+    }
+
+    //TODO: сделать нормальную реализвцию комманды TYPE
+    void commandType(String message) {
+        if (message.startsWith("TYPE")) {
+            sendMessage("200");
+        }
+    }
+
+    void printPrevWorkingDirectory(String message) {
+        if (message.startsWith("PWD"))
+            sendMessage(cwd);
+    }
+
+    //TODO: cделать CDUP
+    void commandChangeToParentDirectory(String message) {
+        if (message.startsWith("CDUP")) {
+
         }
     }
 }
