@@ -2,6 +2,7 @@ import java.net.*;
 import java.io.*;
 import java.io.File;
 
+
 public class EchoServer {
 
     private final String CRLF = "\r\n";
@@ -23,7 +24,7 @@ public class EchoServer {
     public EchoServer(UsersDB usersDB, Window window) {
         this.usersDB = usersDB;
         this.window = window;
-        this.cwd = "D:\\PRAGRAMMAS\\SImpleServer";
+        this.cwd = "D:\\PROGRAMMAS\\SImpleServer";
     }
 
     public void init() throws IOException {
@@ -73,6 +74,10 @@ public class EchoServer {
         printPrevWorkingDirectory(message);
         commandStor(message);
         commandRetr(message);
+        commandSyst(message);
+        commandDele(message);
+        commandRemoveDirectory(message);
+        commandMakeDirectory(message);
     }
 
     private String listOfFiles(String dir) {
@@ -112,7 +117,7 @@ public class EchoServer {
             System.out.println(i);
             j = Integer.parseInt(builder.toString().substring(8), 2);
             System.out.println(j);
-            sendMessage("227 Entering Passive Mode (172,20,10,2," + i + "," + j + ")");
+            sendMessage("227 Entering Passive Mode (192,168,0,105," + i + "," + j + ")");
             window.msgToTextArea("227 Entering Passive Mode (192,168,0,105," + i + "," + j + ")");
         }
     }
@@ -263,6 +268,7 @@ public class EchoServer {
             }
         }
     }
+    /*начиная отсюда добавить правильные коды и описание сообщений*/
 
     //TODO: сделать нормальную реализвцию комманды TYPE
     void commandType(String message) {
@@ -276,6 +282,47 @@ public class EchoServer {
             sendMessage(cwd);
     }
 
+    void commandSyst(String message) {
+        if (message.startsWith("SYST")) {
+            String os = System.getProperty("os.name").toLowerCase();
+            sendMessage("OS type is " + os);
+        }
+    }
+
+    void commandDele(String message) {
+        if (message.startsWith("DELE")) {
+            File file = new File(message.substring(5));
+            if (file.delete()) {
+                sendMessage("Successfully delete");
+            } else {
+                sendMessage("Delete error");
+            }
+        }
+    }
+
+
+    void commandRemoveDirectory(String message) {
+        if (message.startsWith("RMD")) {
+            File file = new File(message.substring(4));
+            if (file.isDirectory()) {
+                String[] children = file.list();
+                for (int i = 0; i < children.length; i++) {
+                    File f = new File(file, children[i]);
+                    f.delete();
+                }
+                file.delete();
+            } else file.delete();
+            sendMessage("Successfully delete");
+        }
+    }
+
+    void commandMakeDirectory(String message) {
+        if (message.startsWith("MKD")) {
+            new File(cwd + '/' + message.substring(4)).mkdir();
+            sendMessage("ONA SOZDALAS");
+        }
+    }
+
 
     //TODO: cделать CDUP
     void commandChangeToParentDirectory(String message) {
@@ -285,4 +332,4 @@ public class EchoServer {
     }
     ///TODO: команда для создания папки
     ///TODO: команда для удаления папки
-}
+   }
