@@ -63,7 +63,7 @@ public class EchoServer {
 
     void dispatchMessage(String message) {
         System.out.println(message);
-
+        commandUser(message);
         commandQuit(message);
         commandPasv(message);
         commandPass(message);
@@ -151,7 +151,7 @@ public class EchoServer {
             }
             System.exit(0);
         }
-        commandUser(message);
+        //commandUser(message);
     }
 
     void commandPass(String message) {
@@ -276,10 +276,13 @@ public class EchoServer {
             sendMessage(cwd);
     }
 
+
     //TODO: cделать CDUP
     void commandChangeToParentDirectory(String message) {
         if (message.startsWith("CDUP")) {
 
         }
     }
+    ///TODO: команда для создания папки
+    ///TODO: команда для удаления папки
 }
