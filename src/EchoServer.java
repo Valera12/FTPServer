@@ -12,7 +12,6 @@ public class EchoServer {
     private BufferedReader reader;
     private BufferedWriter writer;
     private PrintWriter out;
-    private FileOutputStream fileOutputStream;
     private int rowCount;
     private String dir;
     private String cwd;
@@ -24,7 +23,7 @@ public class EchoServer {
     public EchoServer(UsersDB usersDB, Window window) {
         this.usersDB = usersDB;
         this.window = window;
-        this.cwd = "D:\\";
+        this.cwd = "D:\\PRAGRAMMAS\\SImpleServer";
     }
 
     public void init() throws IOException {
@@ -55,6 +54,7 @@ public class EchoServer {
             while (done) {
                 String msgFromClient = reader.readLine();
                 dispatchMessage(msgFromClient);
+                window.msgToTextArea(msgFromClient);
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -71,6 +71,8 @@ public class EchoServer {
         commandChangeWorkDirectory(message);
         commandType(message);
         printPrevWorkingDirectory(message);
+        commandStor(message);
+        commandRetr(message);
     }
 
     private String listOfFiles(String dir) {
@@ -110,7 +112,7 @@ public class EchoServer {
             System.out.println(i);
             j = Integer.parseInt(builder.toString().substring(8), 2);
             System.out.println(j);
-            sendMessage("227 Entering Passive Mode (192,168,0,105," + i + "," + j + ")");
+            sendMessage("227 Entering Passive Mode (172,20,10,2," + i + "," + j + ")");
             window.msgToTextArea("227 Entering Passive Mode (192,168,0,105," + i + "," + j + ")");
         }
     }
@@ -213,17 +215,49 @@ public class EchoServer {
         }
     }
 
-    //TODO: доделать команду получения файла.
-    void commandRetr(String message, String filename) {
-        String filenameToStor;
-        filenameToStor = message.substring(5);
-        File file = new File(filenameToStor);
-        if (message.startsWith("RETR")) {
+    void commandStor(String message) {
+        if (message.startsWith("STOR")) {
+            sendMessage("150 Opening data chanel");
+            File file = new File(message.substring(5));
             try {
-                dataServerSocket = new ServerSocket();
-                BufferedInputStream inputFile = new BufferedInputStream(new FileInputStream(filenameToStor));
-                BufferedOutputStream outputFile = new BufferedOutputStream(dataSocket.getOutputStream());
-                inputFile.read();
+                dataSocket = dataServerSocket.accept();
+                FileOutputStream fileOutputStream = new FileOutputStream(file);
+                BufferedInputStream output = new BufferedInputStream(dataSocket.getInputStream());
+                byte[] buffer = new byte[4096];
+                int bytesRead;
+                while ((bytesRead = output.read(buffer)) != -1) {
+                    fileOutputStream.write(buffer, 0, bytesRead);
+                }
+                output.close();
+                fileOutputStream.close();
+                dataSocket.close();
+                dataServerSocket.close();
+                sendMessage("150 Successfull transfered");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    void commandRetr(String message) {
+        if (message.startsWith("RETR")) {
+            sendMessage("150 Opening data chanel");
+            File file = new File(message.substring(5));
+            try {
+                dataSocket = dataServerSocket.accept();
+                BufferedInputStream fileInputStream = new BufferedInputStream(new FileInputStream(file));
+                BufferedOutputStream output = new BufferedOutputStream(dataSocket.getOutputStream());
+                byte[] buffer = new byte[4096];
+                int bytesRead;
+                while ((bytesRead = fileInputStream.read(buffer)) != -1) {
+                    output.write(buffer, 0, bytesRead);
+                }
+                output.flush();
+                output.close();
+                fileInputStream.close();
+                dataSocket.close();
+                dataServerSocket.close();
+                sendMessage("150 Successfull transfered");
             } catch (IOException e) {
                 e.printStackTrace();
             }

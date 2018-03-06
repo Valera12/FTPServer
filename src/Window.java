@@ -18,10 +18,10 @@ public class Window  {
         window.setVisible(true);
         window.setLayout(new GridBagLayout());
         textArea.setEnabled(true);
-        textArea.setSize(150, 150);
+        textArea.setSize(800, 800);
         userTable.setVisible(true);
         userTable.setSize(50,50);
-        window.getContentPane().add(scrollPane);
+        //window.getContentPane().add(scrollPane);
         window.add(textArea);
 
     }
