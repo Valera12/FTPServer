@@ -24,7 +24,7 @@ public class EchoServer {
     public EchoServer(UsersDB usersDB, Window window) {
         this.usersDB = usersDB;
         this.window = window;
-        this.cwd = "D:\\PROGRAMMAS\\SImpleServer";
+        this.cwd = "D:\\PRAGRAMMAS\\SImpleServer";
     }
 
     public void init() throws IOException {
@@ -78,6 +78,8 @@ public class EchoServer {
         commandDele(message);
         commandRemoveDirectory(message);
         commandMakeDirectory(message);
+        commandRenameFrom(message);
+        commandRenameTo(message);
     }
 
     private String listOfFiles(String dir) {
@@ -117,7 +119,7 @@ public class EchoServer {
             System.out.println(i);
             j = Integer.parseInt(builder.toString().substring(8), 2);
             System.out.println(j);
-            sendMessage("227 Entering Passive Mode (192,168,0,105," + i + "," + j + ")");
+            sendMessage("227 Entering Passive Mode (172,20,10,9," + i + "," + j + ")");
             window.msgToTextArea("227 Entering Passive Mode (192,168,0,105," + i + "," + j + ")");
         }
     }
@@ -330,6 +332,23 @@ public class EchoServer {
 
         }
     }
-    ///TODO: команда для создания папки
-    ///TODO: команда для удаления папки
-   }
+
+    String commandRenameFrom(String message) {
+        File file = new File("321");
+        if (message.startsWith("RNFR")) {
+            file = new File(message.substring(5));
+            sendMessage("file to rename: " + file.getName());
+        }
+
+        return String.valueOf(file);
+    }
+
+
+    void commandRenameTo(String message) {
+        if (message.startsWith("RNTO")) {
+            File file = new File(message.substring(5));
+            file.renameTo(new File(message.substring(5)));
+            sendMessage("New name: " + file.getName());
+        }
+    }
+}
