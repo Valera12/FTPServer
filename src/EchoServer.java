@@ -18,13 +18,15 @@ public class EchoServer {
     private String cwd;
     private UsersDB usersDB;
     private String lastUsername;
+    private String fileName;
     private Window window;
 
 
     public EchoServer(UsersDB usersDB, Window window) {
         this.usersDB = usersDB;
         this.window = window;
-        this.cwd = "D:\\PRAGRAMMAS\\SImpleServer";
+        this.cwd = "D:\\PROGRAMMAS\\SImpleServer";
+        this.fileName = null;
     }
 
     public void init() throws IOException {
@@ -119,7 +121,7 @@ public class EchoServer {
             System.out.println(i);
             j = Integer.parseInt(builder.toString().substring(8), 2);
             System.out.println(j);
-            sendMessage("227 Entering Passive Mode (172,20,10,9," + i + "," + j + ")");
+            sendMessage("227 Entering Passive Mode (192,168,0,105," + i + "," + j + ")");
             window.msgToTextArea("227 Entering Passive Mode (192,168,0,105," + i + "," + j + ")");
         }
     }
@@ -281,13 +283,13 @@ public class EchoServer {
 
     void printPrevWorkingDirectory(String message) {
         if (message.startsWith("PWD"))
-            sendMessage(cwd);
+            sendMessage("257 Current directory" + cwd);
     }
 
     void commandSyst(String message) {
         if (message.startsWith("SYST")) {
             String os = System.getProperty("os.name").toLowerCase();
-            sendMessage("OS type is " + os);
+            sendMessage("215 ValeraFTPWindows" + os);
         }
     }
 
@@ -295,9 +297,9 @@ public class EchoServer {
         if (message.startsWith("DELE")) {
             File file = new File(message.substring(5));
             if (file.delete()) {
-                sendMessage("Successfully delete");
+                sendMessage("250 Successfully delete");
             } else {
-                sendMessage("Delete error");
+                sendMessage("550 Delete error");
             }
         }
     }
@@ -314,41 +316,36 @@ public class EchoServer {
                 }
                 file.delete();
             } else file.delete();
-            sendMessage("Successfully delete");
+            sendMessage("250 Successfully delete");
         }
     }
 
     void commandMakeDirectory(String message) {
         if (message.startsWith("MKD")) {
             new File(cwd + '/' + message.substring(4)).mkdir();
-            sendMessage("ONA SOZDALAS");
+            sendMessage("257 Created successfully");
         }
     }
 
 
-    //TODO: cделать CDUP
-    void commandChangeToParentDirectory(String message) {
-        if (message.startsWith("CDUP")) {
-
-        }
-    }
-
-    String commandRenameFrom(String message) {
-        File file = new File("321");
+    void commandRenameFrom(String message) {
         if (message.startsWith("RNFR")) {
-            file = new File(message.substring(5));
-            sendMessage("file to rename: " + file.getName());
+            File file = new File(message.substring(5));
+            if (file.exists()) {
+                fileName = file.getName();
+                sendMessage("350 File to rename: " + fileName);
+            }else{
+                sendMessage("550 File does not exist");
+            }
         }
-
-        return String.valueOf(file);
     }
 
 
     void commandRenameTo(String message) {
         if (message.startsWith("RNTO")) {
-            File file = new File(message.substring(5));
+            File file = new File(fileName);
             file.renameTo(new File(message.substring(5)));
-            sendMessage("New name: " + file.getName());
+            sendMessage("250 New name: " + message.substring(5));
         }
     }
 }
