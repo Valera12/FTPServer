@@ -1,19 +1,16 @@
-import com.sun.deploy.panel.JreTableModel;
-
 import javax.swing.*;
 import java.awt.*;
 import javax.swing.JTable;
 
 public class Window  {
     private JFrame window = new JFrame("FTP");
-    private JTextArea textArea = new JTextArea("FF");
+    private JTextArea textArea = new JTextArea(" ");
 
-    UsersDB usersDB = new UsersDB();
-    JTable userTable = new JTable(usersDB);
-    JScrollPane scrollPane = new JScrollPane(userTable);
+    private UsersDB usersDB = new UsersDB();
+    private JTable userTable = new JTable(usersDB);
 
-    void startWindow(){
-        window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+    private void startWindow(){
+        window.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         window.setSize(800, 800);
         window.setVisible(true);
         window.setLayout(new GridBagLayout());
@@ -21,7 +18,6 @@ public class Window  {
         textArea.setSize(800, 800);
         userTable.setVisible(true);
         userTable.setSize(50,50);
-        //window.getContentPane().add(scrollPane);
         window.add(textArea);
 
     }
@@ -33,7 +29,7 @@ public class Window  {
 
     public static void main(String[] args) {
         Window window = new Window();
-        EchoServer server = new EchoServer(window.usersDB, window);
+        ServerFTP server = new ServerFTP(window.usersDB, window);
         window.startWindow();
         try {
             server.init();

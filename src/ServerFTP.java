@@ -3,16 +3,14 @@ import java.io.*;
 import java.io.File;
 
 
-public class EchoServer {
+class ServerFTP {
 
     private final String CRLF = "\r\n";
-    private ServerSocket serverSocket;
     private ServerSocket dataServerSocket;
     private Socket dataSocket;
     private Socket incoming;
     private BufferedReader reader;
     private BufferedWriter writer;
-    private PrintWriter out;
     private int rowCount;
     private String dir;
     private String cwd;
@@ -22,15 +20,15 @@ public class EchoServer {
     private Window window;
 
 
-    public EchoServer(UsersDB usersDB, Window window) {
+    ServerFTP(UsersDB usersDB, Window window) {
         this.usersDB = usersDB;
         this.window = window;
-        this.cwd = "D:\\PROGRAMMAS\\SImpleServer";
+        this.cwd = "D:\\PRAGRAMMAS\\SImpleServer";
         this.fileName = null;
     }
 
-    public void init() throws IOException {
-        serverSocket = new ServerSocket(8189);
+    void init() throws IOException {
+        ServerSocket serverSocket = new ServerSocket(8189);
         incoming = serverSocket.accept();
         reader = new BufferedReader(new InputStreamReader(incoming.getInputStream()));
         writer = new BufferedWriter(new OutputStreamWriter(incoming.getOutputStream()));
@@ -51,10 +49,10 @@ public class EchoServer {
         window.msgToTextArea("220 HELLO");
     }
 
-    public void processRequests() {
+    void processRequests() {
         try {
-            boolean done = true;
-            while (done) {
+            //boolean done = true;
+            while (true) {
                 String msgFromClient = reader.readLine();
                 dispatchMessage(msgFromClient);
                 window.msgToTextArea(msgFromClient);
@@ -64,8 +62,9 @@ public class EchoServer {
         }
     }
 
-    void dispatchMessage(String message) {
+    private void dispatchMessage(String message) {
         System.out.println(message);
+
         commandUser(message);
         commandQuit(message);
         commandPasv(message);
@@ -101,15 +100,15 @@ public class EchoServer {
     }
 
 
-    void commandPasv(String message) {
+    private void commandPasv(String message) {
         if (message.startsWith("PASV")) {
             try {
                 dataServerSocket = new ServerSocket(228, 10, Inet4Address.getLocalHost());
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            int i;
-            int j;
+            int firstEightSymbols;
+            int lastSymbols;
             String s = Integer.toBinaryString(dataServerSocket.getLocalPort());
             StringBuilder builder = new StringBuilder();
             for (int index = 0; index < 16 - s.length(); ++index) {
@@ -117,16 +116,21 @@ public class EchoServer {
             }
             builder.append(s);
 
-            i = Integer.parseInt(builder.toString().substring(0, 8), 2);
-            System.out.println(i);
-            j = Integer.parseInt(builder.toString().substring(8), 2);
-            System.out.println(j);
-            sendMessage("227 Entering Passive Mode (192,168,0,105," + i + "," + j + ")");
-            window.msgToTextArea("227 Entering Passive Mode (192,168,0,105," + i + "," + j + ")");
+            firstEightSymbols = Integer.parseInt(builder.toString().substring(0, 8), 2);
+            System.out.println(firstEightSymbols);
+            lastSymbols = Integer.parseInt(builder.toString().substring(8), 2);
+            System.out.println(lastSymbols);
+            String ip = dataServerSocket.getInetAddress().toString();
+            sendMessage("227 Entering Passive Mode (" +
+                    ip.substring(ip.lastIndexOf('/') + 1).replace('.', ',') + "," +
+                    firstEightSymbols + "," + lastSymbols + ")");
+            window.msgToTextArea("227 Entering Passive Mode (" +
+                    ip.substring(ip.lastIndexOf('/') + 1).replace('.', ',') + "," +
+                    firstEightSymbols + "," + lastSymbols + ")");
         }
     }
 
-    void commandUser(String message) {
+    private void commandUser(String message) {
         rowCount = usersDB.getRowCount();
         if (message.startsWith("USER")) {
             boolean found = false;
@@ -149,7 +153,7 @@ public class EchoServer {
         }
     }
 
-    void commandQuit(String message) {
+    private void commandQuit(String message) {
         if (message.trim().equals("QUIT")) {
             sendMessage("221 GOODBYE");
             window.msgToTextArea("221 GOODBYE");
@@ -160,10 +164,10 @@ public class EchoServer {
             }
             System.exit(0);
         }
-        //commandUser(message);
+
     }
 
-    void commandPass(String message) {
+    private void commandPass(String message) {
         if (message.startsWith("PASS")) {
             boolean found = false;
             for (int i = 0; i < rowCount; i++) {
@@ -198,7 +202,7 @@ public class EchoServer {
 
                 dataSocket = dataServerSocket.accept();
 
-                out = new PrintWriter(dataSocket.getOutputStream(), true);
+                PrintWriter out = new PrintWriter(dataSocket.getOutputStream(), true);
                 out.write(fileInfo + CRLF);
                 out.close();
                 dataSocket.close();
@@ -212,7 +216,7 @@ public class EchoServer {
         }
     }
 
-    void commandChangeWorkDirectory(String message) {
+    private void commandChangeWorkDirectory(String message) {
         if (message.startsWith("CWD")) {
             try {
                 dir = message.substring(4);
@@ -224,7 +228,7 @@ public class EchoServer {
         }
     }
 
-    void commandStor(String message) {
+    private void commandStor(String message) {
         if (message.startsWith("STOR")) {
             sendMessage("150 Opening data chanel");
             File file = new File(message.substring(5));
@@ -248,7 +252,7 @@ public class EchoServer {
         }
     }
 
-    void commandRetr(String message) {
+    private void commandRetr(String message) {
         if (message.startsWith("RETR")) {
             sendMessage("150 Opening data chanel");
             File file = new File(message.substring(5));
@@ -272,28 +276,28 @@ public class EchoServer {
             }
         }
     }
-    /*начиная отсюда добавить правильные коды и описание сообщений*/
+
 
     //TODO: сделать нормальную реализвцию комманды TYPE
-    void commandType(String message) {
+    private void commandType(String message) {
         if (message.startsWith("TYPE")) {
             sendMessage("200");
         }
     }
 
-    void printPrevWorkingDirectory(String message) {
+    private void printPrevWorkingDirectory(String message) {
         if (message.startsWith("PWD"))
             sendMessage("257 Current directory" + cwd);
     }
 
-    void commandSyst(String message) {
+    private void commandSyst(String message) {
         if (message.startsWith("SYST")) {
             String os = System.getProperty("os.name").toLowerCase();
             sendMessage("215 ValeraFTPWindows" + os);
         }
     }
 
-    void commandDele(String message) {
+    private void commandDele(String message) {
         if (message.startsWith("DELE")) {
             File file = new File(message.substring(5));
             if (file.delete()) {
@@ -305,7 +309,7 @@ public class EchoServer {
     }
 
 
-    void commandRemoveDirectory(String message) {
+    private void commandRemoveDirectory(String message) {
         if (message.startsWith("RMD")) {
             File file = new File(message.substring(4));
             if (file.isDirectory()) {
@@ -320,7 +324,7 @@ public class EchoServer {
         }
     }
 
-    void commandMakeDirectory(String message) {
+    private void commandMakeDirectory(String message) {
         if (message.startsWith("MKD")) {
             new File(cwd + '/' + message.substring(4)).mkdir();
             sendMessage("257 Created successfully");
@@ -328,7 +332,7 @@ public class EchoServer {
     }
 
 
-    void commandRenameFrom(String message) {
+    private void commandRenameFrom(String message) {
         if (message.startsWith("RNFR")) {
             File file = new File(message.substring(5));
             if (file.exists()) {
@@ -341,7 +345,7 @@ public class EchoServer {
     }
 
 
-    void commandRenameTo(String message) {
+    private void commandRenameTo(String message) {
         if (message.startsWith("RNTO")) {
             File file = new File(fileName);
             file.renameTo(new File(message.substring(5)));
