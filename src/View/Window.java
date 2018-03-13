@@ -1,8 +1,13 @@
+package View;
+
 import javax.swing.*;
 import java.awt.*;
-import javax.swing.JTable;
+import Model.UsersDB;
+import Controller.ServerFTP;
 
 public class Window  {
+    public static final int WIDTH = 800;
+    public static final int HEIGHT = 800;
     private JFrame window = new JFrame("FTP");
     private JTextArea textArea = new JTextArea(" ");
 
@@ -11,18 +16,17 @@ public class Window  {
 
     private void startWindow(){
         window.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-        window.setSize(800, 800);
+        window.setSize(WIDTH, HEIGHT);
         window.setVisible(true);
         window.setLayout(new GridBagLayout());
         textArea.setEnabled(true);
-        textArea.setSize(800, 800);
+        textArea.setSize(WIDTH, HEIGHT);
         userTable.setVisible(true);
-        userTable.setSize(50,50);
         window.add(textArea);
 
     }
 
-    void msgToTextArea( String message){
+    public void msgToTextArea(String message){
         textArea.append(message + "\n");
 
     }

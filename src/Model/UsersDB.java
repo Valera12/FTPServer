@@ -1,4 +1,8 @@
+package Model;
+
 import javax.swing.table.AbstractTableModel;
+import Controller.ServerFTP;
+import Model.UsersDB;
 
 public class UsersDB extends AbstractTableModel {
     private final String header[] = {

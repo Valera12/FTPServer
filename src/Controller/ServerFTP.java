@@ -1,11 +1,20 @@
+package Controller;
+
+import View.Window;
+import Model.UsersDB;
 import java.net.*;
 import java.io.*;
-import java.io.File;
 
 
-class ServerFTP {
+public class ServerFTP {
 
     private final String CRLF = "\r\n";
+    public static final int PORT = 8189;
+    public static final int LOCALPORT = 228;
+    public static final int BACKLOG = 10;
+
+    private boolean isASCII;
+
     private ServerSocket dataServerSocket;
     private Socket dataSocket;
     private Socket incoming;
@@ -20,15 +29,15 @@ class ServerFTP {
     private Window window;
 
 
-    ServerFTP(UsersDB usersDB, Window window) {
+    public ServerFTP(UsersDB usersDB, Window window) {
         this.usersDB = usersDB;
         this.window = window;
-        this.cwd = "D:\\PRAGRAMMAS\\SImpleServer";
+        this.cwd = "D:\\PROGRAMMAS\\SImpleServer";
         this.fileName = null;
     }
 
-    void init() throws IOException {
-        ServerSocket serverSocket = new ServerSocket(8189);
+    public void init() throws IOException {
+        ServerSocket serverSocket = new ServerSocket(PORT);
         incoming = serverSocket.accept();
         reader = new BufferedReader(new InputStreamReader(incoming.getInputStream()));
         writer = new BufferedWriter(new OutputStreamWriter(incoming.getOutputStream()));
@@ -44,14 +53,13 @@ class ServerFTP {
         }
     }
 
-    void sendWelcomeMessage() {
+    public void sendWelcomeMessage() {
         sendMessage("220 HELLO");
         window.msgToTextArea("220 HELLO");
     }
 
-    void processRequests() {
+    public void processRequests() {
         try {
-            //boolean done = true;
             while (true) {
                 String msgFromClient = reader.readLine();
                 dispatchMessage(msgFromClient);
@@ -64,7 +72,6 @@ class ServerFTP {
 
     private void dispatchMessage(String message) {
         System.out.println(message);
-
         commandUser(message);
         commandQuit(message);
         commandPasv(message);
@@ -103,7 +110,7 @@ class ServerFTP {
     private void commandPasv(String message) {
         if (message.startsWith("PASV")) {
             try {
-                dataServerSocket = new ServerSocket(228, 10, Inet4Address.getLocalHost());
+                dataServerSocket = new ServerSocket(LOCALPORT, BACKLOG, Inet4Address.getLocalHost());
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -187,7 +194,7 @@ class ServerFTP {
         }
     }
 
-    void commandList(String message) {
+    private void commandList(String message) {
         if (message.startsWith("LIST")) {
             try {
                 if (message.length() > 5) {
@@ -281,7 +288,13 @@ class ServerFTP {
     //TODO: сделать нормальную реализвцию комманды TYPE
     private void commandType(String message) {
         if (message.startsWith("TYPE")) {
-            sendMessage("200");
+            if(message.substring(5).equals("A")){
+                isASCII = true;
+                sendMessage("200 Go to ASCII mode");
+            }else{
+                isASCII = false;
+                sendMessage("200 Go to I mode");
+            }
         }
     }
 
