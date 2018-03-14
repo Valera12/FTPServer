@@ -2,6 +2,7 @@ package Controller;
 
 import View.Window;
 import Model.UsersDB;
+
 import java.net.*;
 import java.io.*;
 
@@ -32,7 +33,7 @@ public class ServerFTP {
     public ServerFTP(UsersDB usersDB, Window window) {
         this.usersDB = usersDB;
         this.window = window;
-        this.cwd = "D:\\PROGRAMMAS\\SImpleServer";
+        this.cwd = "D:\\PRAGRAMMAS\\SImpleServer";
         this.fileName = null;
     }
 
@@ -208,14 +209,18 @@ public class ServerFTP {
                 window.msgToTextArea("150 Opening data chanel for directory listing of \"" + dir + "\"");
 
                 dataSocket = dataServerSocket.accept();
+                if (isASCII == true) {
+                    PrintWriter out = new PrintWriter(dataSocket.getOutputStream(), true);
+                    out.write(fileInfo + CRLF);
+                    out.close();
+                    sendMessage("226 Successfully transferred \"" + dir + "\"");
 
-                PrintWriter out = new PrintWriter(dataSocket.getOutputStream(), true);
-                out.write(fileInfo + CRLF);
-                out.close();
+                } else {
+                    sendMessage("500 Incorrect mode");
+                }
+
                 dataSocket.close();
                 dataServerSocket.close();
-
-                sendMessage("226 Successfully transferred \"" + dir + "\"");
                 window.msgToTextArea("226 Successfully transferred \"" + dir + "\"");
             } catch (IOException e) {
                 e.printStackTrace();
@@ -242,13 +247,18 @@ public class ServerFTP {
             try {
                 dataSocket = dataServerSocket.accept();
                 FileOutputStream fileOutputStream = new FileOutputStream(file);
-                BufferedInputStream output = new BufferedInputStream(dataSocket.getInputStream());
-                byte[] buffer = new byte[4096];
-                int bytesRead;
-                while ((bytesRead = output.read(buffer)) != -1) {
-                    fileOutputStream.write(buffer, 0, bytesRead);
+                if (isASCII == false) {
+                    BufferedInputStream output = new BufferedInputStream(dataSocket.getInputStream());
+
+                    byte[] buffer = new byte[4096];
+                    int bytesRead;
+                    while ((bytesRead = output.read(buffer)) != -1) {
+                        fileOutputStream.write(buffer, 0, bytesRead);
+                    }
+                    output.close();
+                } else {
+                    sendMessage("500 Incorrect mode");
                 }
-                output.close();
                 fileOutputStream.close();
                 dataSocket.close();
                 dataServerSocket.close();
@@ -265,19 +275,23 @@ public class ServerFTP {
             File file = new File(message.substring(5));
             try {
                 dataSocket = dataServerSocket.accept();
-                BufferedInputStream fileInputStream = new BufferedInputStream(new FileInputStream(file));
-                BufferedOutputStream output = new BufferedOutputStream(dataSocket.getOutputStream());
-                byte[] buffer = new byte[4096];
-                int bytesRead;
-                while ((bytesRead = fileInputStream.read(buffer)) != -1) {
-                    output.write(buffer, 0, bytesRead);
+                if (isASCII == false) {
+                    BufferedInputStream fileInputStream = new BufferedInputStream(new FileInputStream(file));
+                    BufferedOutputStream output = new BufferedOutputStream(dataSocket.getOutputStream());
+                    byte[] buffer = new byte[4096];
+                    int bytesRead;
+                    while ((bytesRead = fileInputStream.read(buffer)) != -1) {
+                        output.write(buffer, 0, bytesRead);
+                    }
+                    output.flush();
+                    output.close();
+                    fileInputStream.close();
+                } else {
+                    sendMessage("500 Incorrect mode");
                 }
-                output.flush();
-                output.close();
-                fileInputStream.close();
                 dataSocket.close();
                 dataServerSocket.close();
-                sendMessage("150 Successfull transfered");
+                sendMessage("150 Successfully transfered");
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -288,10 +302,10 @@ public class ServerFTP {
     //TODO: сделать нормальную реализвцию комманды TYPE
     private void commandType(String message) {
         if (message.startsWith("TYPE")) {
-            if(message.substring(5).equals("A")){
+            if (message.substring(5).equals("A")) {
                 isASCII = true;
                 sendMessage("200 Go to ASCII mode");
-            }else{
+            } else {
                 isASCII = false;
                 sendMessage("200 Go to I mode");
             }
@@ -351,7 +365,7 @@ public class ServerFTP {
             if (file.exists()) {
                 fileName = file.getName();
                 sendMessage("350 File to rename: " + fileName);
-            }else{
+            } else {
                 sendMessage("550 File does not exist");
             }
         }
