@@ -23,7 +23,7 @@ public class ServerFTP {
     private BufferedWriter writer;
     private int rowCount;
     private String dir;
-    private String cwd;
+    private String cwd = "D:\\PRAGRAMMAS\\SImpleServer";
     private UsersDB usersDB;
     private String lastUsername;
     private String fileName;
@@ -33,7 +33,6 @@ public class ServerFTP {
     public ServerFTP(UsersDB usersDB, Window window) {
         this.usersDB = usersDB;
         this.window = window;
-        this.cwd = "D:\\PRAGRAMMAS\\SImpleServer";
         this.fileName = null;
     }
 
@@ -73,22 +72,39 @@ public class ServerFTP {
 
     private void dispatchMessage(String message) {
         System.out.println(message);
-        commandUser(message);
-        commandQuit(message);
-        commandPasv(message);
-        commandPass(message);
-        commandList(message);
-        commandChangeWorkDirectory(message);
-        commandType(message);
-        printPrevWorkingDirectory(message);
-        commandStor(message);
-        commandRetr(message);
-        commandSyst(message);
-        commandDele(message);
-        commandRemoveDirectory(message);
-        commandMakeDirectory(message);
-        commandRenameFrom(message);
-        commandRenameTo(message);
+        if (message.startsWith("USER")) {
+            commandUser(message);
+        } else if (message.startsWith("QUIT")) {
+            commandQuit(message);
+        } else if (message.startsWith("PASV")) {
+            commandPasv(message);
+        } else if (message.startsWith("PASS")) {
+            commandPass(message);
+        } else if (message.startsWith("LIST")) {
+            commandList(message);
+        } else if (message.startsWith("CWD")) {
+            commandChangeWorkDirectory(message);
+        } else if (message.startsWith("TYPE")) {
+            commandType(message);
+        } else if (message.startsWith("PWD")) {
+            printPrevWorkingDirectory(message);
+        } else if (message.startsWith("STOR")) {
+            commandStor(message);
+        } else if (message.startsWith("RETR")) {
+            commandRetr(message);
+        } else if (message.startsWith("SYST")) {
+            commandSyst(message);
+        } else if (message.startsWith("DELE")) {
+            commandDele(message);
+        } else if (message.startsWith("RMD")) {
+            commandRemoveDirectory(message);
+        } else if (message.startsWith("MKD")) {
+            commandMakeDirectory(message);
+        } else if (message.startsWith("RNFR")) {
+            commandRenameFrom(message);
+        } else if (message.startsWith("RNTO")) {
+            commandRenameTo(message);
+        }
     }
 
     private String listOfFiles(String dir) {
@@ -109,7 +125,7 @@ public class ServerFTP {
 
 
     private void commandPasv(String message) {
-        if (message.startsWith("PASV")) {
+
             try {
                 dataServerSocket = new ServerSocket(LOCALPORT, BACKLOG, Inet4Address.getLocalHost());
             } catch (IOException e) {
@@ -135,12 +151,11 @@ public class ServerFTP {
             window.msgToTextArea("227 Entering Passive Mode (" +
                     ip.substring(ip.lastIndexOf('/') + 1).replace('.', ',') + "," +
                     firstEightSymbols + "," + lastSymbols + ")");
-        }
     }
 
     private void commandUser(String message) {
         rowCount = usersDB.getRowCount();
-        if (message.startsWith("USER")) {
+
             boolean found = false;
             lastUsername = message.substring(5);
             for (int i = 0; i < rowCount; i++) {
@@ -158,11 +173,11 @@ public class ServerFTP {
                 window.msgToTextArea("530 not logged in");
             }
 
-        }
+
     }
 
     private void commandQuit(String message) {
-        if (message.trim().equals("QUIT")) {
+
             sendMessage("221 GOODBYE");
             window.msgToTextArea("221 GOODBYE");
             try {
@@ -171,12 +186,9 @@ public class ServerFTP {
                 e.printStackTrace();
             }
             System.exit(0);
-        }
-
     }
 
     private void commandPass(String message) {
-        if (message.startsWith("PASS")) {
             boolean found = false;
             for (int i = 0; i < rowCount; i++) {
                 if (usersDB.getValueAt(i, 1).equals(message.substring(5)) &&
@@ -192,11 +204,9 @@ public class ServerFTP {
                 sendMessage("332 Incorrect password");
                 window.msgToTextArea("332 Incorrect password");
             }
-        }
     }
 
     private void commandList(String message) {
-        if (message.startsWith("LIST")) {
             try {
                 if (message.length() > 5) {
                     dir = message.substring(5);
@@ -225,23 +235,19 @@ public class ServerFTP {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-        }
     }
 
     private void commandChangeWorkDirectory(String message) {
-        if (message.startsWith("CWD")) {
             try {
                 dir = message.substring(4);
-                sendMessage("250 Directory changed to " + dir);
                 cwd = cwd + '/' + dir;
+                sendMessage("250 Directory changed to " + dir);
             } catch (Exception e) {
                 e.printStackTrace();
             }
-        }
     }
 
     private void commandStor(String message) {
-        if (message.startsWith("STOR")) {
             sendMessage("150 Opening data chanel");
             File file = new File(message.substring(5));
             try {
@@ -266,11 +272,9 @@ public class ServerFTP {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-        }
     }
 
     private void commandRetr(String message) {
-        if (message.startsWith("RETR")) {
             sendMessage("150 Opening data chanel");
             File file = new File(message.substring(5));
             try {
@@ -295,13 +299,10 @@ public class ServerFTP {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-        }
     }
 
 
-    //TODO: сделать нормальную реализвцию комманды TYPE
     private void commandType(String message) {
-        if (message.startsWith("TYPE")) {
             if (message.substring(5).equals("A")) {
                 isASCII = true;
                 sendMessage("200 Go to ASCII mode");
@@ -309,35 +310,28 @@ public class ServerFTP {
                 isASCII = false;
                 sendMessage("200 Go to I mode");
             }
-        }
     }
 
     private void printPrevWorkingDirectory(String message) {
-        if (message.startsWith("PWD"))
             sendMessage("257 Current directory" + cwd);
     }
 
     private void commandSyst(String message) {
-        if (message.startsWith("SYST")) {
             String os = System.getProperty("os.name").toLowerCase();
             sendMessage("215 ValeraFTPWindows" + os);
-        }
     }
 
     private void commandDele(String message) {
-        if (message.startsWith("DELE")) {
             File file = new File(message.substring(5));
             if (file.delete()) {
                 sendMessage("250 Successfully delete");
             } else {
                 sendMessage("550 Delete error");
             }
-        }
     }
 
 
     private void commandRemoveDirectory(String message) {
-        if (message.startsWith("RMD")) {
             File file = new File(message.substring(4));
             if (file.isDirectory()) {
                 String[] children = file.list();
@@ -348,19 +342,15 @@ public class ServerFTP {
                 file.delete();
             } else file.delete();
             sendMessage("250 Successfully delete");
-        }
     }
 
     private void commandMakeDirectory(String message) {
-        if (message.startsWith("MKD")) {
             new File(cwd + '/' + message.substring(4)).mkdir();
             sendMessage("257 Created successfully");
-        }
     }
 
 
     private void commandRenameFrom(String message) {
-        if (message.startsWith("RNFR")) {
             File file = new File(message.substring(5));
             if (file.exists()) {
                 fileName = file.getName();
@@ -368,15 +358,12 @@ public class ServerFTP {
             } else {
                 sendMessage("550 File does not exist");
             }
-        }
     }
 
 
     private void commandRenameTo(String message) {
-        if (message.startsWith("RNTO")) {
             File file = new File(fileName);
             file.renameTo(new File(message.substring(5)));
             sendMessage("250 New name: " + message.substring(5));
-        }
     }
 }
